@@ -67,6 +67,7 @@
 #include "proc_comm.h"
 #include "pm-boot.h"
 #include "board-msm7627a.h"
+#include "devices-msm7x27a.h"
 #ifdef CONFIG_PROXIMITY_SENSOR
 #include <linux/gp2a.h>
 #endif
@@ -2220,6 +2221,14 @@ static struct resource msm_fb_resources[] = {
 	}
 };
 
+struct resource ram_console_resources[] = {
+ {
+ .start = 0,
+ .end = 0,
+ .flags	= IORESOURCE_MEM,
+ }
+};
+
 static int msm_fb_detect_panel(const char *name)
 {
 	int ret = -EPERM;
@@ -2260,6 +2269,13 @@ static struct platform_device msm_fb_device = {
 	.dev    = {
 		.platform_data = &msm_fb_pdata,
 	}
+};
+
+struct platform_device ram_console_device = {
+ .name	= "ram_console",
+ .id	= -1,
+ .num_resources = ARRAY_SIZE(ram_console_resources),
+ .resource = ram_console_resources,
 };
 
 #ifdef CONFIG_FB_MSM_MIPI_DSI
@@ -2611,7 +2627,8 @@ static struct platform_device *rumi_sim_devices[] __initdata = {
 	&msm_device_nand,
 	&msm_device_uart_dm1,
 	&msm_gsbi0_qup_i2c_device,
-	&msm_gsbi1_qup_i2c_device
+	&msm_gsbi1_qup_i2c_device,
+        &ram_console_device,
 };
 
 static struct platform_device *surf_ffa_devices[] __initdata = {
@@ -2666,6 +2683,7 @@ static struct platform_device *surf_ffa_devices[] __initdata = {
 	&asoc_msm_pcm,
 	&asoc_msm_dai0,
 	&asoc_msm_dai1,
+        &ram_console_device,
 };
 
 static unsigned pmem_kernel_ebi1_size = PMEM_KERNEL_EBI1_SIZE;
@@ -2695,6 +2713,16 @@ static void __init msm_msm7x2x_allocate_memory_regions(void)
 	msm_fb_resources[0].end = msm_fb_resources[0].start + size - 1;
 	pr_info("allocating %lu bytes at %p (%lx physical) for fb\n",
 			size, addr, __pa(addr));
+
+	/* RAM Console can't use alloc_bootmem(), since that zeroes the
+         * region */
+        size = MSM_RAM_CONSOLE_SIZE;
+        ram_console_resources[0].start = msm_fb_resources[0].end+1;
+        ram_console_resources[0].end = ram_console_resources[0].start + size - 1;
+        pr_info("allocating %lu bytes at (%lx physical) for ram console\n",
+        size, (unsigned long)ram_console_resources[0].start);
+        /* We still have to reserve it, though */
+        reserve_bootmem(ram_console_resources[0].start,size,0);
 }
 
 static struct memtype_reserve msm7x27a_reserve_table[] __initdata = {

@@ -3336,7 +3336,7 @@ static struct msm7x27a_regulators msm7x27a_reg[] = {
 		.id = "smps3",
 		.voltage = 1800,
 	},
-#if 0	  
+	  
 	[1] = {
 		.id = "ldo9",
 		.voltage = 1800,
@@ -3425,7 +3425,7 @@ static struct msm7x27a_regulators msm7x27a_reg[] = {
 		.id = "ldo19",
 		.voltage = 3000,
 	},
-#endif
+
 };
 /* function to Enable the regulators */
 static void msm7x27a_enable_regulators(void)

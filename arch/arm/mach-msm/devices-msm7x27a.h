@@ -13,7 +13,7 @@
 #ifndef __ARCH_ARM_MACH_MSM_DEVICES_MSM7X27A_H
 #define __ARCH_ARM_MACH_MSM_DEVICES_MSM7X27A_H
 
-#define MSM_RAM_CONSOLE_SIZE 128*1024
+#define MSM_RAM_CONSOLE_SIZE 512*1024
 
 extern struct platform_device ram_console_device;
 extern struct resource ram_console_resources[];

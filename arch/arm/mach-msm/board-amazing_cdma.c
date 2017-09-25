@@ -80,6 +80,9 @@
 #ifdef CONFIG_CHARGER_SMB328A
 #include <linux/smb328a_charger.h>
 #endif
+#ifdef CONFIG_ANDROID_PERSISTENT_RAM
+#include <linux/persistent_ram.h>
+#endif
 
 #ifdef CONFIG_TOUCHSCREEN_MELFAS_TS
 #define MELFAS_TSP_ADDR 0x48    // melfas TSP slave address
@@ -2225,7 +2228,7 @@ struct resource ram_console_resources[] = {
  {
  .start = 0,
  .end = 0,
- .flags	= IORESOURCE_MEM,
+ .flags        = IORESOURCE_MEM,
  }
 };
 
@@ -2271,12 +2274,39 @@ static struct platform_device msm_fb_device = {
 	}
 };
 
-struct platform_device ram_console_device = {
- .name	= "ram_console",
- .id	= -1,
- .num_resources = ARRAY_SIZE(ram_console_resources),
- .resource = ram_console_resources,
+
+#ifdef CONFIG_ANDROID_PERSISTENT_RAM
+#define PERSISTENT_RAM_SIZE SZ_512K
+#define RAM_CONSOLE_SIZE (512*SZ_1K * 2)
+#define PERSISTENT_RAM_BASE 0x1850000
+
+static struct persistent_ram_descriptor pram_descs[] = {
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+       {
+               .name = "ram_console",
+               .size = RAM_CONSOLE_SIZE,
+       },
+#endif
 };
+
+static struct persistent_ram msm7x27a_persistent_ram = {
+       .start = PERSISTENT_RAM_BASE,
+       .size = PERSISTENT_RAM_SIZE,
+       .num_descs = ARRAY_SIZE(pram_descs),
+       .descs = pram_descs,
+};
+
+void __init add_persistent_ram(void) {
+       persistent_ram_early_init(&msm7x27a_persistent_ram);
+}
+#endif
+
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+struct platform_device ram_console_device = {
+       .name = "ram_console",
+       .id = -1,
+};
+#endif /* CONFIG_ANDROID_RAM_CONSOLE */
 
 #ifdef CONFIG_FB_MSM_MIPI_DSI
 static int mipi_renesas_set_bl(int level)
@@ -2716,7 +2746,7 @@ static void __init msm_msm7x2x_allocate_memory_regions(void)
 
 	/* RAM Console can't use alloc_bootmem(), since that zeroes the
          * region */
-        size = MSM_RAM_CONSOLE_SIZE;
+        size = RAM_CONSOLE_SIZE;
         ram_console_resources[0].start = msm_fb_resources[0].end+1;
         ram_console_resources[0].end = ram_console_resources[0].start + size - 1;
         pr_info("allocating %lu bytes at (%lx physical) for ram console\n",
@@ -2781,6 +2811,10 @@ static void __init msm7x27a_reserve(void)
 {
 	reserve_info = &msm7x27a_reserve_info;
 	msm_reserve();
+#ifdef CONFIG_ANDROID_PERSISTENT_RAM
+       add_persistent_ram();
+#endif
+
 }
 
 static void __init msm_device_i2c_init(void)

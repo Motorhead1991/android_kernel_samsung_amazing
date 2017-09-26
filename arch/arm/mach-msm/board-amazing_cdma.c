@@ -3393,7 +3393,7 @@ static struct msm7x27a_regulators msm7x27a_reg[] = {
 	},
 	[4] = {
 		.id = "ldo1",
-		.voltage = 2100,
+		.voltage = 2800,
 	},
 	[5] = {
 		.id = "ldo2",
